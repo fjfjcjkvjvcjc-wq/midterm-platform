@@ -1,748 +1,342 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>منصة القضاء على الميد ترم | Math 0 & English</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
-  <style>
-    body {
-      font-family: 'Cairo', sans-serif;
-      background-color: #0f172a;
-      color: #f8fafc;
-    }
-    .glass-card {
-      background: rgba(30, 41, 59, 0.75);
-      backdrop-filter: blur(12px);
-      border: 1px solid rgba(148, 163, 184, 0.15);
-    }
-    .tab-active {
-      background: linear-gradient(135deg, #3b82f6, #6366f1);
-      color: #ffffff;
-      box-shadow: 0 4px 15px rgba(59, 130, 246, 0.35);
-    }
-  </style>
-</head>
-<body class="min-h-screen flex flex-col selection:bg-blue-500 selection:text-white">
-
-  <!-- Toast Notification -->
-  <div id="toast" class="fixed bottom-5 left-5 z-50 hidden transform transition-all duration-300 translate-y-4 opacity-0">
-    <div id="toastContent" class="px-5 py-3 rounded-xl shadow-2xl font-bold text-sm flex items-center gap-2 bg-emerald-600 text-white border border-emerald-400/30">
-    </div>
-  </div>
-
-  <!-- Top Announcement Banner -->
-  <div class="bg-gradient-to-l from-indigo-600 via-blue-600 to-cyan-600 text-white text-xs sm:text-sm py-2.5 px-4 shadow-md">
-    <div class="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-2">
-      <div class="flex items-center gap-2 font-bold">
-        <span class="bg-white/20 px-2 py-0.5 rounded-md text-xs">تنبيه هام</span>
-        <span id="announcementText">أهلاً بكم في منصة القضاء على الميد ترم — تابعوا الدروس والاختبارات أولاً بأول!</span>
-      </div>
-      <div class="flex items-center gap-3 text-xs">
-        <span id="syncStatus" class="flex items-center gap-1.5 bg-slate-900/40 px-2.5 py-1 rounded-full">
-          <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
-          <span>جاري الاتصال بالسحابة...</span>
-        </span>
-        <button onclick="loadFromFirebase(true)" title="تحديث البيانات" class="bg-white/15 hover:bg-white/25 px-2.5 py-1 rounded-full transition font-semibold">
-          ↻ تحديث
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Header -->
-  <header class="border-b border-slate-800 bg-slate-900/90 sticky top-0 z-30 backdrop-blur-md">
-    <div class="max-w-6xl mx-auto px-4 py-4 flex flex-wrap items-center justify-between gap-4">
-      <div id="brandTrigger" ondblclick="openAdminLogin()" class="flex items-center gap-3 cursor-pointer select-none">
-        <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-black text-xl shadow-lg shadow-blue-500/20">
-          M0
-        </div>
-        <div>
-          <h1 class="text-lg sm:text-2xl font-black tracking-tight bg-gradient-to-l from-white to-slate-300 bg-clip-text text-transparent">
-            منصة القضاء على الميد ترم
-          </h1>
-          <p class="text-xs text-slate-400 font-semibold">المراجعة الشاملة لمادتي Math 0 و English</p>
-        </div>
-      </div>
-
-      <!-- Subject Switcher -->
-      <div class="flex items-center gap-2 bg-slate-800/90 p-1.5 rounded-2xl border border-slate-700/70">
-        <button id="btnSubjectMath" onclick="switchSubject('math0')" class="tab-active px-4 sm:px-6 py-2 rounded-xl text-sm font-extrabold transition">
-          📐 Math 0
-        </button>
-        <button id="btnSubjectEnglish" onclick="switchSubject('english')" class="px-4 sm:px-6 py-2 rounded-xl text-sm font-extrabold text-slate-300 hover:text-white transition">
-          📘 English
-        </button>
-      </div>
-    </div>
-  </header>
-
-  <!-- Admin Control Bar (Hidden until authenticated with 3023) -->
-  <section id="adminPanel" class="hidden bg-slate-900 border-b-2 border-amber-500/60 shadow-2xl">
-    <div class="max-w-6xl mx-auto px-4 py-6">
-      <div class="flex flex-wrap items-center justify-between gap-3 mb-6 pb-4 border-b border-slate-800">
-        <div class="flex items-center gap-2.5">
-          <span class="px-3 py-1 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs font-extrabold">
-            وضع المشرف مفعل
-          </span>
-          <h2 class="text-lg font-extrabold text-white">لوحة التحكم السحابية المباشرة</h2>
-        </div>
-        <button onclick="logoutAdmin()" class="px-4 py-2 rounded-xl bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 text-xs font-bold transition">
-          خروج من وضع المشرف
-        </button>
-      </div>
-
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <!-- 1. Edit Announcement -->
-        <div class="glass-card p-5 rounded-2xl">
-          <h3 class="font-extrabold text-sm text-amber-300 mb-3">1. تعديل شريط التنبيه العلوي</h3>
-          <textarea id="adminAnnouncementInput" rows="3" class="w-full rounded-xl bg-slate-950/80 border border-slate-700 p-3 text-sm text-white focus:border-blue-500 focus:outline-none mb-3" placeholder="اكتب التنبيه الذي سيظهر لجميع الطلاب..."></textarea>
-          <button onclick="updateAnnouncement()" class="w-full py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold text-sm transition">
-            حفظ التنبيه ونشره للطلاب
-          </button>
-        </div>
-
-        <!-- 2. Add / Edit Lesson or Resource -->
-        <div class="glass-card p-5 rounded-2xl">
-          <h3 id="lessonFormTitle" class="font-extrabold text-sm text-blue-300 mb-3">2. إضافة درس / ملخص / فيديو</h3>
-          <input type="hidden" id="editLessonId" value="" />
-          <div class="space-y-2.5">
-            <div class="grid grid-cols-2 gap-2">
-              <select id="adminLessonSubject" class="rounded-xl bg-slate-950/80 border border-slate-700 px-3 py-2 text-xs font-bold text-white">
-                <option value="math0">مادة Math 0</option>
-                <option value="english">مادة English</option>
-              </select>
-              <select id="adminLessonType" class="rounded-xl bg-slate-950/80 border border-slate-700 px-3 py-2 text-xs font-bold text-white">
-                <option value="فيديو شرح">🎥 فيديو شرح</option>
-                <option value="ملخص PDF">📄 ملخص PDF</option>
-                <option value="مراجعة ميد ترم">🔥 مراجعة ميد ترم</option>
-                <option value="رابط اختبار">📝 رابط اختبار خارجي</option>
-              </select>
-            </div>
-            <input id="adminLessonTitle" type="text" placeholder="عنوان الدرس أو الملخص..." class="w-full rounded-xl bg-slate-950/80 border border-slate-700 px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none" />
-            <input id="adminLessonUrl" type="url" placeholder="الرابط (YouTube / Google Drive / Form)..." class="w-full rounded-xl bg-slate-950/80 border border-slate-700 px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none" dir="ltr" />
-            <input id="adminLessonNote" type="text" placeholder="ملاحظة مختصرة للطالب (اختياري)..." class="w-full rounded-xl bg-slate-950/80 border border-slate-700 px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none" />
-            <div class="flex gap-2 pt-1">
-              <button onclick="saveLesson()" class="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-sm transition">
-                حفظ في السحابة
-              </button>
-              <button id="cancelEditBtn" onclick="resetLessonForm()" class="hidden px-3 py-2.5 rounded-xl bg-slate-700 hover:bg-slate-600 text-white font-bold text-xs">
-                إلغاء
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- 3. Add Interactive MCQ Question -->
-        <div class="glass-card p-5 rounded-2xl">
-          <h3 class="font-extrabold text-sm text-emerald-300 mb-3">3. إضافة سؤال اختبار تفاعلي (MCQ)</h3>
-          <div class="space-y-2">
-            <select id="adminQuizSubject" class="w-full rounded-xl bg-slate-950/80 border border-slate-700 px-3 py-2 text-xs font-bold text-white">
-              <option value="math0">اختبار Math 0</option>
-              <option value="english">اختبار English</option>
-            </select>
-            <input id="adminQuizQuestion" type="text" placeholder="اكتب نص السؤال هنا..." class="w-full rounded-xl bg-slate-950/80 border border-slate-700 px-3 py-2 text-sm text-white focus:border-emerald-500 focus:outline-none" />
-            <div class="grid grid-cols-2 gap-2">
-              <input id="opt0" type="text" placeholder="الاختيار الأول (A)" class="rounded-xl bg-slate-950/80 border border-slate-700 px-2.5 py-1.5 text-xs text-white" />
-              <input id="opt1" type="text" placeholder="الاختيار الثاني (B)" class="rounded-xl bg-slate-950/80 border border-slate-700 px-2.5 py-1.5 text-xs text-white" />
-              <input id="opt2" type="text" placeholder="الاختيار الثالث (C)" class="rounded-xl bg-slate-950/80 border border-slate-700 px-2.5 py-1.5 text-xs text-white" />
-              <input id="opt3" type="text" placeholder="الاختيار الرابع (D)" class="rounded-xl bg-slate-950/80 border border-slate-700 px-2.5 py-1.5 text-xs text-white" />
-            </div>
-            <div class="grid grid-cols-2 gap-2">
-              <select id="adminQuizCorrect" class="rounded-xl bg-slate-950/80 border border-slate-700 px-2.5 py-1.5 text-xs font-bold text-emerald-300">
-                <option value="0">الإجابة الصحيحة: A</option>
-                <option value="1">الإجابة الصحيحة: B</option>
-                <option value="2">الإجابة الصحيحة: C</option>
-                <option value="3">الإجابة الصحيحة: D</option>
-              </select>
-              <input id="adminQuizExplanation" type="text" placeholder="شرح الحل (اختياري)" class="rounded-xl bg-slate-950/80 border border-slate-700 px-2.5 py-1.5 text-xs text-white" />
-            </div>
-            <button onclick="addQuizQuestion()" class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-sm transition">
-              إضافة السؤال للاختبار
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Main Content -->
-  <main class="flex-1 max-w-6xl w-full mx-auto px-4 py-8">
-
-    <!-- Progress & Stats Bar -->
-    <div class="glass-card rounded-2xl p-5 mb-8 flex flex-col md:flex-row items-center justify-between gap-4">
-      <div>
-        <h2 id="currentSubjectHeading" class="text-xl sm:text-2xl font-black text-white">
-          مادة الرياضيات (Math 0)
-        </h2>
-        <p id="currentSubjectSub" class="text-xs sm:text-sm text-slate-400 mt-1">
-          علّم على الدروس التي أنجزتها لمتابعة تقدمك الشخصي في المراجعة
-        </p>
-      </div>
-      <div class="w-full md:w-72">
-        <div class="flex justify-between text-xs font-bold mb-1.5">
-          <span class="text-slate-300">نسبة إنجازك في المادة</span>
-          <span id="progressPercent" class="text-blue-400">0%</span>
-        </div>
-        <div class="w-full h-3 bg-slate-800 rounded-full overflow-hidden border border-slate-700">
-          <div id="progressBar" class="h-full bg-gradient-to-l from-blue-500 to-emerald-400 transition-all duration-500" style="width: 0%"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Mode Tabs: Lessons vs Interactive Quiz -->
-    <div class="flex items-center gap-3 mb-6">
-      <button id="tabLessons" onclick="switchView('lessons')" class="px-5 py-2.5 rounded-xl font-extrabold text-sm bg-blue-600 text-white shadow-lg shadow-blue-600/25 transition">
-        📚 الدروس والملخصات (<span id="lessonsCount">0</span>)
-      </button>
-      <button id="tabQuiz" onclick="switchView('quiz')" class="px-5 py-2.5 rounded-xl font-extrabold text-sm bg-slate-800 text-slate-300 hover:text-white border border-slate-700 transition">
-        🧠 اختبر نفسك (<span id="quizCount">0</span>)
-      </button>
-    </div>
-
-    <!-- Lessons Grid -->
-    <div id="lessonsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-    </div>
-
-    <!-- Interactive Quiz Container -->
-    <div id="quizContainer" class="hidden space-y-5">
-    </div>
-
-  </main>
-
-  <!-- Footer -->
-  <footer class="border-t border-slate-800/80 bg-slate-950/60 py-6 px-4 mt-12">
-    <div class="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-400">
-      <p class="font-semibold">منصة القضاء على الميد ترم — بالتوفيق للجميع</p>
-      <button onclick="openAdminLogin()" class="text-slate-500 hover:text-slate-300 transition font-semibold">
-        إدارة المنصة
-      </button>
-    </div>
-  </footer>
-
-  <!-- Admin Password Modal -->
-  <div id="passwordModal" class="fixed inset-0 z-50 hidden bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="glass-card max-w-sm w-full rounded-2xl p-6 border border-slate-700 shadow-2xl">
-      <h3 class="text-lg font-black text-white mb-1">دخول لوحة تحكم المشرف</h3>
-      <p class="text-xs text-slate-400 mb-4">أدخل كلمة المرور لتعديل المحتوى ومزامنته مع السحابة</p>
-      <input id="adminPassInput" type="password" inputmode="numeric" placeholder="••••" onkeydown="if(event.key==='Enter') verifyAdminPass()" class="w-full text-center tracking-widest text-xl font-bold rounded-xl bg-slate-950 border border-slate-700 py-3 text-white focus:border-blue-500 focus:outline-none mb-4" />
-      <div class="flex gap-2">
-        <button onclick="verifyAdminPass()" class="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-sm transition">
-          دخول
-        </button>
-        <button onclick="closeAdminLogin()" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-sm transition">
-          إلغاء
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    const FIREBASE_DB_URL = "https://data-for-platform-default-rtdb.firebaseio.com/midtermPlatformV1.json";
-    const ADMIN_PASS = "3023";
-    const LOCAL_CACHE_KEY = "midterm_platform_cache_v1";
-    const STUDENT_DONE_KEY = "midterm_student_completed_v1";
-
-    let currentSubject = "math0";
-    let currentView = "lessons";
-    let isAdmin = false;
-    let studentAnswers = {};
-
-    const defaultData = {
-      initialized: true,
-      announcement: "أهلاً بكم في منصة القضاء على الميد ترم — كل ملخصات وفيديوهات واختبارات Math 0 و English في مكان واحد!",
-      math0: {
-        lessons: [
-          {
-            id: "m1",
-            type: "فيديو شرح",
-            title: "مراجعة الدوال والنهايات (Functions & Limits)",
-            url: "https://www.youtube.com",
-            note: "أهم أفكار الميد ترم مع حل مسائل الامتحانات السابقة"
-          },
-          {
-            id: "m2",
-            type: "ملخص PDF",
-            title: "ملخص قوانين التفاضل والاشتقاق (Derivatives)",
-            url: "https://drive.google.com",
-            note: "ورقة قوانين شاملة للمراجعة السريعة ليلة الامتحان"
-          }
-        ],
-        quiz: [
-          {
-            id: "mq1",
-            question: "ما هي قيمة النهاية: lim (x → 2) (x² - 4) / (x - 2) ؟",
-            options: ["0", "2", "4", "غير معرفة"],
-            correct: 2,
-            explanation: "بتحليل البسط إلى (x - 2)(x + 2) واختصار (x - 2) ثم التعويض بـ x = 2 نحصل على 2 + 2 = 4."
-          }
-        ]
-      },
-      english: {
-        lessons: [
-          {
-            id: "e1",
-            type: "ملخص PDF",
-            title: "قواعد الأزمنة الأساسية (Tenses Summary)",
-            url: "https://drive.google.com",
-            note: "مقارنة مبسطة بين المضارع البسيط والمستمر والتام"
-          },
-          {
-            id: "e2",
-            type: "مراجعة ميد ترم",
-            title: "أهم مصطلحات الحاسب والذكاء الاصطناعي (CS & AI Terms)",
-            url: "https://drive.google.com",
-            note: "المصطلحات المتكررة في أسئلة الاختيار والترجمة"
-          }
-        ],
-        quiz: [
-          {
-            id: "eq1",
-            question: "Choose the correct form: She _____ to the university every morning.",
-            options: ["go", "goes", "going", "gone"],
-            correct: 1,
-            explanation: "نستخدم المضارع البسيط مع إضافة es للفعل لأن الفاعل مفرد غائب (She) والجملة تعبر عن عادة متكررة."
-          }
-        ]
-      }
-    };
-
-    let appData = JSON.parse(localStorage.getItem(LOCAL_CACHE_KEY)) || JSON.parse(JSON.stringify(defaultData));
-    let completedLessons = JSON.parse(localStorage.getItem(STUDENT_DONE_KEY)) || {};
-
-    function showToast(msg, isError = false) {
-      const toast = document.getElementById("toast");
-      const content = document.getElementById("toastContent");
-      content.textContent = msg;
-      content.className = isError
-        ? "px-5 py-3 rounded-xl shadow-2xl font-bold text-sm flex items-center gap-2 bg-rose-600 text-white border border-rose-400/30"
-        : "px-5 py-3 rounded-xl shadow-2xl font-bold text-sm flex items-center gap-2 bg-emerald-600 text-white border border-emerald-400/30";
-      toast.classList.remove("hidden");
-      setTimeout(() => {
-        toast.classList.remove("translate-y-4", "opacity-0");
-      }, 10);
-      setTimeout(() => {
-        toast.classList.add("translate-y-4", "opacity-0");
-        setTimeout(() => toast.classList.add("hidden"), 300);
-      }, 3200);
-    }
-
-    function setSyncStatus(state, text) {
-      const el = document.getElementById("syncStatus");
-      const dotColor = state === "ok" ? "bg-emerald-400" : state === "loading" ? "bg-amber-400 animate-pulse" : "bg-rose-400";
-      el.innerHTML = `<span class="w-2 h-2 rounded-full ${dotColor}"></span><span>${text}</span>`;
-    }
-
-    async function loadFromFirebase(manual = false) {
-      setSyncStatus("loading", "جاري المزامنة...");
-      try {
-        const res = await fetch(FIREBASE_DB_URL);
-        if (!res.ok) throw new Error("HTTP " + res.status);
-        const data = await res.json();
-
-        if (data && data.initialized) {
-          appData = {
-            initialized: true,
-            announcement: data.announcement || "",
-            math0: {
-              lessons: (data.math0 && Array.isArray(data.math0.lessons)) ? data.math0.lessons : [],
-              quiz: (data.math0 && Array.isArray(data.math0.quiz)) ? data.math0.quiz : []
-            },
-            english: {
-              lessons: (data.english && Array.isArray(data.english.lessons)) ? data.english.lessons : [],
-              quiz: (data.english && Array.isArray(data.english.quiz)) ? data.english.quiz : []
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>منصة القضاء على الميد ترم | بيئة المراجعة والاختبارات الذكية</title>
+    
+    <!-- Google Fonts: Cairo & Tajawal for crisp Arabic typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Tailwind Configuration -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Cairo', 'Tajawal', 'sans-serif'],
+                        tajawal: ['Tajawal', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#EEF2FF',
+                            100: '#E0E7FF',
+                            500: '#6366F1',
+                            600: '#4F46E5',
+                            700: '#4338CA',
+                        }
+                    }
+                }
             }
-          };
-          localStorage.setItem(LOCAL_CACHE_KEY, JSON.stringify(appData));
-        } else {
-          await saveToFirebase(false);
+        }
+    </script>
+
+    <!-- Custom Minimalist Enhancements & Scrollbars -->
+    <style>
+        body {
+            background-color: #F8FAFC;
+            color: #0F172A;
+            font-family: 'Cairo', 'Tajawal', sans-serif;
+            overflow-x: hidden;
         }
 
-        setSyncStatus("ok", "متصل بالسحابة");
-        renderAll();
-        if (manual) showToast("تم تحديث أحدث البيانات من السحابة ✅");
-      } catch (err) {
-        console.error(err);
-        setSyncStatus("error", "وضع محلي (تعذر الاتصال)");
-        renderAll();
-        if (manual) showToast("تعذر الاتصال بالسحابة، يتم عرض النسخة المحفوظة", true);
-      }
-    }
+        /* Custom subtle scrollbars */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #F1F5F9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #CBD5E1;
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94A3B8;
+        }
 
-    async function saveToFirebase(notify = true) {
-      appData.initialized = true;
-      localStorage.setItem(LOCAL_CACHE_KEY, JSON.stringify(appData));
-      setSyncStatus("loading", "جاري الحفظ...");
-      try {
-        const res = await fetch(FIREBASE_DB_URL, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(appData)
-        });
-        if (!res.ok) throw new Error("HTTP " + res.status);
-        setSyncStatus("ok", "محفوظ في السحابة");
-        if (notify) showToast("تم الحفظ والمزامنة مع السحابة بنجاح ✅");
-      } catch (err) {
-        console.error(err);
-        setSyncStatus("error", "فشل الحفظ السحابي");
-        showToast("حدث خطأ أثناء الحفظ في Firebase! تأكد من الإنترنت", true);
-      }
-    }
+        /* Smooth fade transitions */
+        .fade-in {
+            animation: fadeIn 0.25s ease-out forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased selection:bg-indigo-100 selection:text-indigo-800">
 
-    function switchSubject(subj) {
-      currentSubject = subj;
-      const btnMath = document.getElementById("btnSubjectMath");
-      const btnEng = document.getElementById("btnSubjectEnglish");
-
-      if (subj === "math0") {
-        btnMath.className = "tab-active px-4 sm:px-6 py-2 rounded-xl text-sm font-extrabold transition";
-        btnEng.className = "px-4 sm:px-6 py-2 rounded-xl text-sm font-extrabold text-slate-300 hover:text-white transition";
-        document.getElementById("currentSubjectHeading").textContent = "مادة الرياضيات (Math 0)";
-      } else {
-        btnEng.className = "tab-active px-4 sm:px-6 py-2 rounded-xl text-sm font-extrabold transition";
-        btnMath.className = "px-4 sm:px-6 py-2 rounded-xl text-sm font-extrabold text-slate-300 hover:text-white transition";
-        document.getElementById("currentSubjectHeading").textContent = "اللغة الإنجليزية (English)";
-      }
-      renderAll();
-    }
-
-    function switchView(view) {
-      currentView = view;
-      const tabL = document.getElementById("tabLessons");
-      const tabQ = document.getElementById("tabQuiz");
-      const contL = document.getElementById("lessonsContainer");
-      const contQ = document.getElementById("quizContainer");
-
-      if (view === "lessons") {
-        tabL.className = "px-5 py-2.5 rounded-xl font-extrabold text-sm bg-blue-600 text-white shadow-lg shadow-blue-600/25 transition";
-        tabQ.className = "px-5 py-2.5 rounded-xl font-extrabold text-sm bg-slate-800 text-slate-300 hover:text-white border border-slate-700 transition";
-        contL.classList.remove("hidden");
-        contQ.classList.add("hidden");
-      } else {
-        tabQ.className = "px-5 py-2.5 rounded-xl font-extrabold text-sm bg-emerald-600 text-white shadow-lg shadow-emerald-600/25 transition";
-        tabL.className = "px-5 py-2.5 rounded-xl font-extrabold text-sm bg-slate-800 text-slate-300 hover:text-white border border-slate-700 transition";
-        contQ.classList.remove("hidden");
-        contL.classList.add("hidden");
-      }
-    }
-
-    function toggleLessonDone(id) {
-      completedLessons[id] = !completedLessons[id];
-      localStorage.setItem(STUDENT_DONE_KEY, JSON.stringify(completedLessons));
-      renderAll();
-    }
-
-    function renderAll() {
-      document.getElementById("announcementText").textContent = appData.announcement || "";
-      if (isAdmin) {
-        document.getElementById("adminAnnouncementInput").value = appData.announcement || "";
-      }
-
-      const subjectObj = appData[currentSubject] || { lessons: [], quiz: [] };
-      const lessons = subjectObj.lessons || [];
-      const quiz = subjectObj.quiz || [];
-
-      document.getElementById("lessonsCount").textContent = lessons.length;
-      document.getElementById("quizCount").textContent = quiz.length;
-
-      // Update Progress
-      const doneCount = lessons.filter(l => completedLessons[l.id]).length;
-      const percent = lessons.length === 0 ? 0 : Math.round((doneCount / lessons.length) * 100);
-      document.getElementById("progressPercent").textContent = percent + "%";
-      document.getElementById("progressBar").style.width = percent + "%";
-
-      // Render Lessons
-      const lessonsContainer = document.getElementById("lessonsContainer");
-      if (lessons.length === 0) {
-        lessonsContainer.innerHTML = `
-          <div class="col-span-full glass-card rounded-2xl p-10 text-center text-slate-400 font-bold">
-            لا توجد دروس مضافة في هذا القسم حالياً.
-          </div>`;
-      } else {
-        lessonsContainer.innerHTML = lessons.map(lesson => {
-          const isDone = !!completedLessons[lesson.id];
-          const badgeColors = {
-            "فيديو شرح": "bg-rose-500/20 text-rose-300 border-rose-500/30",
-            "ملخص PDF": "bg-blue-500/20 text-blue-300 border-blue-500/30",
-            "مراجعة ميد ترم": "bg-amber-500/20 text-amber-300 border-amber-500/30",
-            "رابط اختبار": "bg-emerald-500/20 text-emerald-300 border-emerald-500/30"
-          };
-          const badgeClass = badgeColors[lesson.type] || "bg-indigo-500/20 text-indigo-300 border-indigo-500/30";
-
-          return `
-            <div class="glass-card rounded-2xl p-5 flex flex-col justify-between transition hover:border-blue-500/40 ${isDone ? 'ring-1 ring-emerald-500/40' : ''}">
-              <div>
-                <div class="flex items-center justify-between gap-2 mb-3">
-                  <span class="px-3 py-1 rounded-lg text-xs font-extrabold border ${badgeClass}">
-                    ${escapeHtml(lesson.type)}
-                  </span>
-                  <button onclick="toggleLessonDone('${lesson.id}')" class="text-xs font-bold px-2.5 py-1 rounded-lg transition ${isDone ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-slate-800 text-slate-400 hover:text-white'}">
-                    ${isDone ? '✓ تمت المذاكرة' : 'تحديد كمنجز'}
-                  </button>
+    <!-- ===================================================================== -->
+    <!-- TOP NAVIGATION BAR                                                    -->
+    <!-- ===================================================================== -->
+    <header class="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200 shadow-xs">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-wrap items-center justify-between gap-3 py-3 md:h-18">
+                
+                <!-- Brand / Logo -->
+                <div class="flex items-center gap-3 cursor-pointer" onclick="switchToStudentHome()">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 flex items-center justify-center text-white shadow-sm">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 class="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight leading-none">منصة القضاء على الميد ترم</h1>
+                        <p class="text-xs text-slate-500 mt-0.5 hidden sm:block">استعد بقوة، راجع بذكاء، واضمن الدرجة النهائية</p>
+                    </div>
                 </div>
-                <h3 class="text-base font-extrabold text-white leading-snug mb-2">
-                  ${escapeHtml(lesson.title)}
-                </h3>
-                ${lesson.note ? `<p class="text-xs text-slate-400 leading-relaxed mb-4">${escapeHtml(lesson.note)}</p>` : ''}
-              </div>
 
-              <div class="pt-3 border-t border-slate-800/80 flex items-center gap-2">
-                <a href="${escapeAttr(lesson.url)}" target="_blank" rel="noopener noreferrer" class="flex-1 text-center py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-xs transition shadow-md shadow-blue-600/20">
-                  فتح المحتوى ↗
-                </a>
-                ${isAdmin ? `
-                  <button onclick="startEditLesson('${lesson.id}')" class="px-3 py-2.5 rounded-xl bg-amber-500/20 hover:bg-amber-500 text-amber-300 hover:text-slate-950 font-bold text-xs transition">
-                    تعديل
-                  </button>
-                  <button onclick="deleteLesson('${lesson.id}')" class="px-3 py-2.5 rounded-xl bg-rose-500/20 hover:bg-rose-600 text-rose-300 hover:text-white font-bold text-xs transition">
-                    حذف
-                  </button>
-                ` : ''}
-              </div>
-            </div>
-          `;
-        }).join("");
-      }
-
-      // Render Interactive Quiz
-      const quizContainer = document.getElementById("quizContainer");
-      if (quiz.length === 0) {
-        quizContainer.innerHTML = `
-          <div class="glass-card rounded-2xl p-10 text-center text-slate-400 font-bold">
-            لا توجد أسئلة تفاعلية مضافة في هذا القسم بعد.
-          </div>`;
-      } else {
-        quizContainer.innerHTML = quiz.map((q, qIdx) => {
-          const chosen = studentAnswers[q.id];
-          const hasAnswered = chosen !== undefined;
-
-          return `
-            <div class="glass-card rounded-2xl p-6">
-              <div class="flex items-start justify-between gap-3 mb-4">
-                <h3 class="text-base sm:text-lg font-extrabold text-white">
-                  <span class="text-blue-400 ml-1">س${qIdx + 1}:</span> ${escapeHtml(q.question)}
-                </h3>
-                ${isAdmin ? `
-                  <button onclick="deleteQuizQuestion('${q.id}')" class="px-3 py-1.5 rounded-xl bg-rose-500/20 hover:bg-rose-600 text-rose-300 hover:text-white font-bold text-xs shrink-0 transition">
-                    حذف السؤال
-                  </button>
-                ` : ''}
-              </div>
-
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                ${q.options.map((opt, optIdx) => {
-                  let btnStyle = "bg-slate-900/90 border-slate-700 text-slate-200 hover:border-blue-500";
-                  if (hasAnswered) {
-                    if (optIdx === Number(q.correct)) {
-                      btnStyle = "bg-emerald-600/25 border-emerald-500 text-emerald-200 font-extrabold";
-                    } else if (optIdx === chosen) {
-                      btnStyle = "bg-rose-600/25 border-rose-500 text-rose-200";
-                    } else {
-                      btnStyle = "bg-slate-900/50 border-slate-800 text-slate-500";
-                    }
-                  }
-                  const letters = ["A", "B", "C", "D"];
-                  return `
-                    <button onclick="answerQuiz('${q.id}', ${optIdx})" class="text-right p-3.5 rounded-xl border text-sm font-semibold transition flex items-center gap-3 ${btnStyle}">
-                      <span class="w-7 h-7 rounded-lg bg-slate-800 flex items-center justify-center text-xs font-black shrink-0">${letters[optIdx]}</span>
-                      <span>${escapeHtml(opt)}</span>
-                    </button>
-                  `;
-                }).join("")}
-              </div>
-
-              ${hasAnswered && q.explanation ? `
-                <div class="mt-4 p-3.5 rounded-xl bg-blue-950/50 border border-blue-500/30 text-xs sm:text-sm text-blue-200">
-                  <strong class="text-blue-400">التوضيح:</strong> ${escapeHtml(q.explanation)}
+                <!-- Search Bar (Visible in Student View) -->
+                <div id="headerSearchContainer" class="order-3 md:order-2 w-full md:w-80 lg:w-96">
+                    <div class="relative">
+                        <input type="text" id="globalSearchInput" oninput="handleSearch(this.value)" placeholder="ابحث عن درس، ملخص، أو رابط اختبار..." 
+                            class="w-full bg-slate-100/80 hover:bg-slate-100 focus:bg-white text-sm text-slate-800 rounded-xl pr-10 pl-4 py-2 border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all">
+                        <svg class="w-4 h-4 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                        </svg>
+                    </div>
                 </div>
-              ` : ''}
+
+                <!-- Dual-Mode Toggle -->
+                <div class="order-2 md:order-3 flex items-center gap-2">
+                    <div class="bg-slate-100 p-1 rounded-xl border border-slate-200 flex items-center">
+                        <button id="btnStudentMode" onclick="setAppMode('student')" 
+                            class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-all bg-white text-indigo-600 shadow-xs">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/>
+                            </svg>
+                            <span>واجهة الطالب</span>
+                        </button>
+                        <button id="btnAdminMode" onclick="requestAdminMode()" 
+                            class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-all text-slate-600 hover:text-slate-900">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            </svg>
+                            <span>لوحة التحكم</span>
+                        </button>
+                    </div>
+                </div>
             </div>
-          `;
-        }).join("");
-      }
-    }
+        </div>
+    </header>
 
-    function answerQuiz(qId, optIdx) {
-      studentAnswers[qId] = optIdx;
-      renderAll();
-    }
+    <!-- ===================================================================== -->
+    <!-- MAIN CONTENT CONTAINER                                                -->
+    <!-- ===================================================================== -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
 
-    // Admin Functions
-    function openAdminLogin() {
-      if (isAdmin) {
-        document.getElementById("adminPanel").scrollIntoView({ behavior: "smooth" });
-        return;
-      }
-      document.getElementById("passwordModal").classList.remove("hidden");
-      const input = document.getElementById("adminPassInput");
-      input.value = "";
-      setTimeout(() => input.focus(), 50);
-    }
+        <!-- ================================================================= -->
+        <!-- 1. STUDENT VIEW (DASHBOARD, LESSONS & QUIZ LINKS)                 -->
+        <!-- ================================================================= -->
+        <section id="studentViewSection" class="fade-in space-y-8">
+            
+            <!-- Welcome & Progress Banner -->
+            <div class="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div>
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 mb-2">
+                        <span class="w-2 h-2 rounded-full bg-indigo-600 animate-pulse"></span>
+                        معسكر الاستعداد للميد ترم
+                    </span>
+                    <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900">مرحباً بك في منصة القضاء على الميد ترم 🎯</h2>
+                    <p class="text-sm text-slate-600 mt-1">اختر المادة الدراسية لاستعراض ملخصات المراجعة، الشروحات المكثفة، وروابط الاختبارات.</p>
+                </div>
+                
+                <!-- Side Motto Card & Quick Student Stats -->
+                <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
+                    <!-- Stylish Side Motto Card -->
+                    <div class="bg-gradient-to-l from-indigo-600 to-violet-600 text-white px-4 py-3 rounded-xl shadow-xs border border-indigo-500/30 flex items-center gap-3 shrink-0">
+                        <div class="w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center text-lg shrink-0">
+                            🛡️
+                        </div>
+                        <div>
+                            <span class="block text-[10px] font-bold text-indigo-200 tracking-wide">شعار المنصة</span>
+                            <p class="text-xs sm:text-sm font-extrabold leading-snug">محمد خلف لديكم لا خوف عليكم</p>
+                        </div>
+                    </div>
 
-    function closeAdminLogin() {
-      document.getElementById("passwordModal").classList.add("hidden");
-    }
+                    <!-- Quick Student Stats -->
+                    <div class="flex items-center gap-3 sm:gap-4 justify-between md:justify-end bg-slate-50 p-3.5 rounded-xl border border-slate-200/80">
+                        <div class="text-center px-2">
+                            <div id="statSubjectsCount" class="text-lg font-extrabold text-indigo-600">2</div>
+                            <div class="text-[11px] font-bold text-slate-500">المواد</div>
+                        </div>
+                        <div class="w-px h-8 bg-slate-200"></div>
+                        <div class="text-center px-2">
+                            <div id="statCompletedLessons" class="text-lg font-extrabold text-emerald-600">0/0</div>
+                            <div class="text-[11px] font-bold text-slate-500">الدروس المنجزة</div>
+                        </div>
+                        <div class="w-px h-8 bg-slate-200"></div>
+                        <div class="text-center px-2">
+                            <div id="statQuizzesCount" class="text-lg font-extrabold text-violet-600">0</div>
+                            <div class="text-[11px] font-bold text-slate-500">الاختبارات</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-    function verifyAdminPass() {
-      const val = document.getElementById("adminPassInput").value.trim();
-      if (val === ADMIN_PASS) {
-        isAdmin = true;
-        closeAdminLogin();
-        document.getElementById("adminPanel").classList.remove("hidden");
-        renderAll();
-        showToast("مرحباً بك في لوحة التحكم ✅");
-      } else {
-        showToast("كلمة المرور غير صحيحة!", true);
-      }
-    }
+            <!-- Subjects / Modules Grid -->
+            <div class="space-y-4">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-extrabold text-slate-900">المواد والمسارات الدراسية</h3>
+                    <span class="text-xs text-slate-500 font-medium">اضغط على المادة لتصفية المحتوى</span>
+                </div>
+                <div id="studentSubjectsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+            </div>
 
-    function logoutAdmin() {
-      isAdmin = false;
-      document.getElementById("adminPanel").classList.add("hidden");
-      resetLessonForm();
-      renderAll();
-      showToast("تم الخروج من وضع المشرف");
-    }
+            <!-- Lessons & Resources Section -->
+            <div class="space-y-4">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    <div class="flex items-center gap-2">
+                        <h3 class="text-lg font-extrabold text-slate-900">الدروس والمصادر التعليمية</h3>
+                        <span id="lessonsFilterBadge" class="text-xs font-bold px-2.5 py-0.5 rounded-full bg-slate-200/70 text-slate-700">جميع المواد</span>
+                    </div>
+                    <div class="flex items-center gap-1.5 flex-wrap">
+                        <button onclick="setTagFilter('all')" data-tag="all" class="tag-filter-btn px-3 py-1 rounded-lg text-xs font-bold bg-indigo-600 text-white transition-all">الكل</button>
+                        <button onclick="setTagFilter('فيديو')" data-tag="فيديو" class="tag-filter-btn px-3 py-1 rounded-lg text-xs font-bold bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all">فيديو</button>
+                        <button onclick="setTagFilter('ملف PDF')" data-tag="ملف PDF" class="tag-filter-btn px-3 py-1 rounded-lg text-xs font-bold bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all">ملف PDF</button>
+                        <button onclick="setTagFilter('ملخص')" data-tag="ملخص" class="tag-filter-btn px-3 py-1 rounded-lg text-xs font-bold bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all">ملخص</button>
+                    </div>
+                </div>
+                <div id="studentLessonsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"></div>
+            </div>
 
-    async function updateAnnouncement() {
-      const text = document.getElementById("adminAnnouncementInput").value.trim();
-      appData.announcement = text;
-      renderAll();
-      await saveToFirebase();
-    }
+            <!-- Quiz Links Section -->
+            <div class="space-y-4">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-extrabold text-slate-900">روابط الاختبارات</h3>
+                    <span class="text-xs text-slate-500 font-medium">انتقل مباشرة إلى رابط الاختبار الإلكتروني</span>
+                </div>
+                <div id="studentQuizzesGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"></div>
+            </div>
+        </section>
 
-    async function saveLesson() {
-      const editId = document.getElementById("editLessonId").value;
-      const subj = document.getElementById("adminLessonSubject").value;
-      const type = document.getElementById("adminLessonType").value;
-      const title = document.getElementById("adminLessonTitle").value.trim();
-      const url = document.getElementById("adminLessonUrl").value.trim();
-      const note = document.getElementById("adminLessonNote").value.trim();
+        <!-- ================================================================= -->
+        <!-- 2. ADMIN CONTROL PANEL (FULL CONTENT MANAGEMENT DASHBOARD)        -->
+        <!-- ================================================================= -->
+        <section id="adminPanelSection" class="hidden fade-in space-y-6">
+            <div class="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h2 class="text-xl font-extrabold text-slate-900">لوحة التحكم وإدارة المحتوى</h2>
+                    <p class="text-xs sm:text-sm text-slate-500">أضف، عدّل، ورتب المواد والدروس وروابط الاختبارات بكل سهولة.</p>
+                </div>
+                <div class="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0">
+                    <button onclick="switchAdminTab('subjects')" data-admin-tab="subjects" class="admin-tab-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-indigo-600 text-white whitespace-nowrap transition-all">1. المواد الدراسية</button>
+                    <button onclick="switchAdminTab('lessons')" data-admin-tab="lessons" class="admin-tab-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 whitespace-nowrap transition-all">2. الدروس والمصادر</button>
+                    <button onclick="switchAdminTab('quizzes')" data-admin-tab="quizzes" class="admin-tab-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 whitespace-nowrap transition-all">3. روابط الاختبارات</button>
+                    <button onclick="switchAdminTab('backup')" data-admin-tab="backup" class="admin-tab-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 whitespace-nowrap transition-all">4. النسخ الاحتياطي (JSON)</button>
+                </div>
+            </div>
 
-      if (!title || !url) {
-        showToast("يرجى كتابة عنوان الدرس والرابط!", true);
-        return;
-      }
+            <!-- TAB 1: SUBJECTS MANAGER -->
+            <div id="adminTabSubjects" class="admin-tab-content grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-xs h-fit space-y-4">
+                    <h3 id="subjectFormTitle" class="text-base font-extrabold text-slate-900">إضافة مادة دراسية جديدة</h3>
+                    <form id="subjectForm" onsubmit="handleSaveSubject(event)" class="space-y-4">
+                        <input type="hidden" id="subjectEditId" value="">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">اسم المادة الدراسية *</label>
+                            <input type="text" id="subjectTitleInput" required placeholder="مثال: Math0 أو انجلش" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">وصف مختصر</label>
+                            <textarea id="subjectDescInput" rows="2" placeholder="نبذة قصيرة عن محتوى المادة..." class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none"></textarea>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">الأيقونة</label>
+                                <select id="subjectIconInput" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm bg-white outline-none">
+                                    <option value="📐">📐 رياضيات</option>
+                                    <option value="📚">📚 لغات / عام</option>
+                                    <option value="💻">💻 برمجة</option>
+                                    <option value="⚙️">⚙️ ميكانيكا</option>
+                                    <option value="🧪">🧪 علوم</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">لون البطاقة</label>
+                                <select id="subjectColorInput" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm bg-white outline-none">
+                                    <option value="indigo">نيلي (Indigo)</option>
+                                    <option value="emerald">زمردي (Emerald)</option>
+                                    <option value="amber">كهرماني (Amber)</option>
+                                    <option value="rose">وردي (Rose)</option>
+                                    <option value="sky">سماوي (Sky)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2 pt-1">
+                            <button type="submit" class="flex-1 py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm transition-colors">حفظ المادة</button>
+                            <button type="button" id="btnCancelSubjectEdit" onclick="resetSubjectForm()" class="hidden py-2.5 px-3 rounded-xl border border-slate-300 text-slate-600 font-bold text-sm hover:bg-slate-50">إلغاء</button>
+                        </div>
+                    </form>
+                </div>
+                <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-xs space-y-4">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-base font-extrabold text-slate-900">المواد الحالية (الترتيب والتحكم)</h3>
+                        <span id="adminSubjectsCountBadge" class="text-xs font-bold px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700">2 مواد</span>
+                    </div>
+                    <div id="adminSubjectsList" class="space-y-3"></div>
+                </div>
+            </div>
 
-      if (!appData[subj]) appData[subj] = { lessons: [], quiz: [] };
+            <!-- TAB 2: LESSONS & RESOURCES PUBLISHER -->
+            <div id="adminTabLessons" class="admin-tab-content hidden grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-xs h-fit space-y-4">
+                    <h3 id="lessonFormTitle" class="text-base font-extrabold text-slate-900">نشر درس أو مصدر جديد</h3>
+                    <form id="lessonForm" onsubmit="handleSaveLesson(event)" class="space-y-4">
+                        <input type="hidden" id="lessonEditId" value="">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">المادة الدراسية *</label>
+                            <select id="lessonSubjectSelect" required class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm bg-white outline-none"></select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">عنوان الدرس *</label>
+                            <input type="text" id="lessonTitleInput" required placeholder="مثال: مراجعة المحاضرة الأولى" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm outline-none focus:border-indigo-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">نوع المصدر (الوسم)</label>
+                            <select id="lessonTagInput" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm bg-white outline-none">
+                                <option value="فيديو">فيديو (YouTube / شرح مرئي)</option>
+                                <option value="ملف PDF">ملف PDF (Google Drive / مذكرة)</option>
+                                <option value="ملخص">ملخص (مراجعة سريعة)</option>
+                                <option value="مقال">مقال / مرجع خارجي</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">الرابط الخارجي (URL) *</label>
+                            <input type="url" id="lessonUrlInput" required dir="ltr" placeholder="https://..." class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm outline-none focus:border-indigo-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">وصف الدرس</label>
+                            <textarea id="lessonDescInput" rows="2" placeholder="تفاصيل إضافية حول الدرس..." class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm outline-none focus:border-indigo-500"></textarea>
+                        </div>
+                        <div class="flex items-center gap-2 pt-1">
+                            <button type="submit" class="flex-1 py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm transition-colors">نشر الدرس</button>
+                            <button type="button" id="btnCancelLessonEdit" onclick="resetLessonForm()" class="hidden py-2.5 px-3 rounded-xl border border-slate-300 text-slate-600 font-bold text-sm hover:bg-slate-50">إلغاء</button>
+                        </div>
+                    </form>
+                </div>
+                <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-xs space-y-4">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <h3 class="text-base font-extrabold text-slate-900">الدروس المنشورة</h3>
+                        <select id="adminLessonsFilterSubject" onchange="renderAdminLessons()" class="rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-bold bg-slate-50 outline-none">
+                            <option value="all">جميع المواد</option>
+                        </select>
+                    </div>
+                    <div id="adminLessonsList" class="space-y-3"></div>
+                </div>
+            </div>
 
-      if (editId) {
-        // Remove from old subject if moved, then update
-        ["math0", "english"].forEach(s => {
-          appData[s].lessons = (appData[s].lessons || []).filter(l => l.id !== editId);
-        });
-        appData[subj].lessons.unshift({ id: editId, type, title, url, note });
-      } else {
-        const newId = "lesson_" + Date.now();
-        appData[subj].lessons.unshift({ id: newId, type, title, url, note });
-      }
-
-      resetLessonForm();
-      switchSubject(subj);
-      switchView("lessons");
-      await saveToFirebase();
-    }
-
-    function startEditLesson(id) {
-      const lesson = (appData[currentSubject].lessons || []).find(l => l.id === id);
-      if (!lesson) return;
-      document.getElementById("editLessonId").value = lesson.id;
-      document.getElementById("adminLessonSubject").value = currentSubject;
-      document.getElementById("adminLessonType").value = lesson.type;
-      document.getElementById("adminLessonTitle").value = lesson.title;
-      document.getElementById("adminLessonUrl").value = lesson.url;
-      document.getElementById("adminLessonNote").value = lesson.note || "";
-      document.getElementById("lessonFormTitle").textContent = "2. تعديل الدرس المحدد";
-      document.getElementById("cancelEditBtn").classList.remove("hidden");
-      document.getElementById("adminPanel").scrollIntoView({ behavior: "smooth" });
-    }
-
-    function resetLessonForm() {
-      document.getElementById("editLessonId").value = "";
-      document.getElementById("adminLessonTitle").value = "";
-      document.getElementById("adminLessonUrl").value = "";
-      document.getElementById("adminLessonNote").value = "";
-      document.getElementById("lessonFormTitle").textContent = "2. إضافة درس / ملخص / فيديو";
-      document.getElementById("cancelEditBtn").classList.add("hidden");
-    }
-
-    async function deleteLesson(id) {
-      if (!confirm("هل أنت متأكد من حذف هذا الدرس نهائياً من السحابة؟")) return;
-      appData[currentSubject].lessons = (appData[currentSubject].lessons || []).filter(l => l.id !== id);
-      renderAll();
-      await saveToFirebase();
-    }
-
-    async function addQuizQuestion() {
-      const subj = document.getElementById("adminQuizSubject").value;
-      const question = document.getElementById("adminQuizQuestion").value.trim();
-      const options = [
-        document.getElementById("opt0").value.trim(),
-        document.getElementById("opt1").value.trim(),
-        document.getElementById("opt2").value.trim(),
-        document.getElementById("opt3").value.trim()
-      ];
-      const correct = Number(document.getElementById("adminQuizCorrect").value);
-      const explanation = document.getElementById("adminQuizExplanation").value.trim();
-
-      if (!question || options.some(o => !o)) {
-        showToast("يرجى كتابة نص السؤال والاختيارات الأربعة!", true);
-        return;
-      }
-
-      if (!appData[subj]) appData[subj] = { lessons: [], quiz: [] };
-      appData[subj].quiz.push({
-        id: "q_" + Date.now(),
-        question,
-        options,
-        correct,
-        explanation
-      });
-
-      document.getElementById("adminQuizQuestion").value = "";
-      ["opt0", "opt1", "opt2", "opt3", "adminQuizExplanation"].forEach(id => {
-        document.getElementById(id).value = "";
-      });
-
-      switchSubject(subj);
-      switchView("quiz");
-      await saveToFirebase();
-    }
-
-    async function deleteQuizQuestion(id) {
-      if (!confirm("هل تريد حذف هذا السؤال من الاختبار؟")) return;
-      appData[currentSubject].quiz = (appData[currentSubject].quiz || []).filter(q => q.id !== id);
-      renderAll();
-      await saveToFirebase();
-    }
-
-    function escapeHtml(str) {
-      return String(str || "")
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;");
-    }
-
-    function escapeAttr(url) {
-      const trimmed = String(url || "").trim();
-      if (/^https?:\/\//i.test(trimmed)) return trimmed;
-      return "https://" + trimmed;
-    }
-
-    // Keyboard shortcut Alt + A to open Admin Login
-    document.addEventListener("keydown", (e) => {
-      if (e.altKey && (e.key === "a" || e.key === "A" || e.key === "ش")) {
-        openAdminLogin();
-      }
-    });
-
-    // Initial render & cloud sync
-    renderAll();
-    loadFromFirebase(false);
-  </script>
-</body>
-</html>
+            <!-- TAB 3: QUIZ LINKS MANAGER (SIMPLIFIED URL INPUT) -->
+            <div id="adminTabQuizzes" class="admin-tab-content hidden grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-xs h-fit space-y-4">
+                    <h3 id="quizFormTitle" class="text-base font-extrabold text-slate-900">إضافة رابط اختبار جديد</h3>
+                    <form id="quizMetaForm
